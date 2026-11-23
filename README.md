@@ -5,7 +5,7 @@ Full-stack healthcare management portfolio project (fictional provider). See `do
 ```
 backend/   FastAPI + PostgreSQL API        (Phases 1-7, complete: accounts, RBAC, audit, branches, services, booking, queue, notifications, inventory, reports)
 web/       React staff dashboard           (next)
-mobile/    Flutter patient app             (next)
+mobile/    Flutter patient app             (scaffolded: see mobile/README.md)
 docs/      SRS, ERD, use cases, architecture
 ```
 
