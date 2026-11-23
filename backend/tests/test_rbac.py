@@ -55,3 +55,13 @@ def test_admin_rejects_unknown_role_and_duplicate_email(client, db_session, seed
     assert client.post(f"{API}/admin/staff", json={**NEW_STAFF, "roles": ["wizard"]}, headers=h).status_code == 422
     assert client.post(f"{API}/admin/staff", json=NEW_STAFF, headers=h).status_code == 201
     assert client.post(f"{API}/admin/staff", json=NEW_STAFF, headers=h).status_code == 409
+
+
+def test_staff_me_returns_roles_and_branches(client, seeded, db_session):
+    make_staff(db_session, "nurse@clinic.example.com", "nurse", branch_ids=[1])
+    h = {"Authorization": f"Bearer {staff_token(client, 'nurse@clinic.example.com')}"}
+    r = client.get(f"{API}/auth/staff/me", headers=h)
+    assert r.status_code == 200
+    assert r.json()["role_names"] == ["nurse"]
+    assert r.json()["branch_ids"] == [1]
+    assert client.get(f"{API}/auth/staff/me").status_code == 401

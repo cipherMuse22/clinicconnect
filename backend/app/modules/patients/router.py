@@ -22,7 +22,7 @@ class PatientSearchResult(BaseModel):
 def search_patients(
     q: str = Query(min_length=3, max_length=60),
     db: Session = Depends(get_db),
-    staff: Staff = Depends(require_roles("receptionist")),
+    staff: Staff = Depends(require_roles("receptionist", "clinic_manager", "system_admin")),
 ):
     """Reception lookup (section 3.2). Returns only basic contact details, never clinical information."""
     rows = db.execute(

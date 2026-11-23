@@ -1,8 +1,11 @@
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
 
+from app.core.deps import get_current_staff
 from app.core.security import create_access_token
 from app.db.session import get_db
+from app.modules.accounts.models import Staff
+from app.modules.admin.router import StaffOut
 from app.modules.auth import service
 from app.modules.auth.schemas import (
     LoginRequest,
@@ -34,3 +37,9 @@ def patient_login(data: LoginRequest, db: Session = Depends(get_db)):
 def staff_login(data: LoginRequest, db: Session = Depends(get_db)):
     staff = service.authenticate_staff(db, data.email, data.password)
     return TokenResponse(access_token=create_access_token(staff.staff_id, "staff"))
+
+
+@router.get("/staff/me", response_model=StaffOut)
+def staff_me(staff: Staff = Depends(get_current_staff)):
+    """Who am I? The staff dashboard uses this to decide which menus to show (roles and branches)."""
+    return staff
