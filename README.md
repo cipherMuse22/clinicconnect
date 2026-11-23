@@ -4,7 +4,7 @@ Full-stack healthcare management portfolio project (fictional provider). See `do
 
 ```
 backend/   FastAPI + PostgreSQL API        (Phases 1-7, complete: accounts, RBAC, audit, branches, services, booking, queue, notifications, inventory, reports)
-web/       React staff dashboard           (see web/README.md)
+web/       React staff dashboard           (next)
 mobile/    Flutter patient app             (scaffolded: see mobile/README.md)
 docs/      SRS, ERD, use cases, architecture
 ```
@@ -165,8 +165,8 @@ is `tests/test_stock_concurrency.py` (set `TEST_DATABASE_URL`).
 
 ## Next steps
 
-The backend, patient app and staff dashboard exist. Next: staff and branch management screens in the dashboard, then
-hardening (refresh tokens, password reset, login rate limiting).
+The backend is complete. Next: scaffold `web/` (Vite React TS staff dashboard) and `mobile/` (`flutter create`
+patient app).
 
 ## Known gaps (on purpose, for later)
 
