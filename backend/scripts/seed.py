@@ -3,7 +3,7 @@
 Run from backend/:   python -m scripts.seed
 """
 import os
-from datetime import time
+from datetime import timedelta, time
 
 from sqlalchemy import select
 
@@ -11,6 +11,7 @@ from app.core.security import hash_password
 from app.db.session import SessionLocal
 from app.modules.accounts.models import Role, Staff, StaffBranch, StaffRole
 from app.modules.admin.router import ROLE_NAMES
+from app.modules.appointments.service import generate_slots, now_local
 from app.modules.branches.models import Branch, BranchHours
 from app.modules.services.models import BranchService, Service
 
@@ -74,6 +75,12 @@ def main() -> None:
                 )
                 if not exists:
                     db.add(BranchService(branch_id=b.branch_id, service_id=s.service_id))
+
+        db.flush()
+        # 14 days of bookable slots (2 places each) for every offered service; safe to re-run
+        today = now_local().date()
+        for bs in db.scalars(select(BranchService)).all():
+            generate_slots(db, bs, bs.service, today, today + timedelta(days=13), capacity=2)
 
         if not db.scalar(select(Staff).where(Staff.email == ADMIN_EMAIL)):
             admin = Staff(first_name="System", last_name="Admin", email=ADMIN_EMAIL, password_hash=hash_password(ADMIN_PASSWORD))

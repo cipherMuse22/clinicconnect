@@ -2,6 +2,7 @@ from sqlalchemy import ForeignKey, Integer, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
+from app.modules.branches.models import Branch
 
 
 class Service(Base):
@@ -34,3 +35,4 @@ class BranchService(Base):
     availability_status: Mapped[str] = mapped_column(String(20), default="available", nullable=False)
 
     service: Mapped[Service] = relationship()
+    branch: Mapped[Branch] = relationship()

@@ -11,6 +11,8 @@ class Settings(BaseSettings):
     access_token_minutes: int = 30
     privacy_notice_version: str = "2026-11-v1"
     cors_origins: list[str] = ["http://localhost:5173"]
+    clinic_timezone: str = "Africa/Johannesburg"
+    cancellation_cutoff_hours: int = 2  # patients cannot cancel or reschedule closer than this
 
 
 @lru_cache

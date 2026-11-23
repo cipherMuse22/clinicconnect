@@ -3,7 +3,7 @@
 Full-stack healthcare management portfolio project (fictional provider). See `docs/` for the SRS and diagrams.
 
 ```
-backend/   FastAPI + PostgreSQL API        (Phases 1-2: accounts, membership, RBAC, audit, branches, services)
+backend/   FastAPI + PostgreSQL API        (Phases 1-3: accounts, membership, RBAC, audit, branches, services, booking)
 web/       React staff dashboard           (next)
 mobile/    Flutter patient app             (next)
 docs/      SRS, ERD, use cases, architecture
@@ -58,9 +58,39 @@ Run tests (no database needed, they use in-memory SQLite): `pytest`
 
 After pulling Phase 2: `alembic upgrade head`, then `python -m scripts.seed` (adds 2 branches, 8 services, opening hours).
 
+## What exists in Phase 3 (booking)
+
+| Endpoint | Who | Notes |
+|---|---|---|
+| `GET /api/v1/branches/{b}/services/{s}/slots?date=YYYY-MM-DD` | public | slots with `spots_left` and `available` |
+| `POST /api/v1/me/appointments` | patient | `{"slot_id": 1}`; returns a reference like `APT-3VQR4SZW` |
+| `GET /api/v1/me/appointments?scope=upcoming\|past\|all` | patient | own appointments only |
+| `POST /api/v1/me/appointments/{id}/cancel`, `/reschedule` | patient | blocked inside the cancellation cutoff (default 2 hours) |
+| `POST /api/v1/appointments` | receptionist, manager, admin | book on behalf of a patient (`patient_id`, `slot_id`) |
+| `POST /api/v1/appointments/{id}/cancel`, `/reschedule` | receptionist, manager, admin | no cutoff for staff |
+| `GET /api/v1/branches/{b}/appointments?date=` | reception, nurse, manager, admin | day schedule, no clinical data |
+| `GET /api/v1/patients/search?q=` | receptionist | name, phone, email or membership number |
+| `POST /api/v1/branches/{b}/slots/generate` | admin, manager of that branch | builds slots from opening hours, max 31 days |
+
+How double-booking is prevented: places are taken with one guarded `UPDATE ... WHERE booked_count < capacity`,
+so two people can never take the last place. The database also has a `CHECK (booked_count <= capacity)`.
+A patient can hold a slot only once (partial unique index), and a reschedule must stay at the same branch and service.
+
+After pulling Phase 3: `pip install -r requirements.txt` (adds `tzdata`, needed on Windows), `alembic upgrade head`,
+then `python -m scripts.seed` (adds 14 days of slots).
+
+### Concurrency test (optional, needs real PostgreSQL)
+
+```powershell
+docker compose exec db psql -U clinic -d clinicconnect -c "CREATE DATABASE clinicconnect_test"
+$env:TEST_DATABASE_URL="postgresql+psycopg://clinic:clinic_dev_pw@localhost:5432/clinicconnect_test"
+pytest tests/test_booking_concurrency.py
+```
+It fires 20 simultaneous bookings at a 3-place slot and checks that exactly 3 succeed. It wipes only the `_test` database.
+
 ## Next steps
 
-1. Phase 3: `appointment_slot` + booking with a row lock.
+1. Phase 4: check-in (QR or reference) and the queue.
 2. Scaffold `web/` (Vite React TS) and `mobile/` (`flutter create`).
 
 ## Known gaps (on purpose, for later)
