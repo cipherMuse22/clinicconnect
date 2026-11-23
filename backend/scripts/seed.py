@@ -13,6 +13,7 @@ from app.modules.accounts.models import Role, Staff, StaffBranch, StaffRole
 from app.modules.admin.router import ROLE_NAMES
 from app.modules.appointments.service import generate_slots, now_local
 from app.modules.branches.models import Branch, BranchHours
+from app.modules.inventory.models import BranchStock, InventoryItem, ServiceItem
 from app.modules.services.models import BranchService, Service
 
 ADMIN_EMAIL = os.getenv("SEED_ADMIN_EMAIL", "admin@clinicconnect.example.com")
@@ -34,6 +35,24 @@ SERVICES = [
     ("General nurse consultation", "Consultation with a registered nurse.", 30),
     ("Wellness check", "Basic wellness assessment.", 30),
 ]
+
+# stock the demo services use: (item name, category, unit)
+ITEMS = [
+    ("Adult vaccine dose", "Vaccine", "dose"),
+    ("Flu vaccine dose", "Vaccine", "dose"),
+    ("Infant vaccine dose", "Vaccine", "dose"),
+    ("Glucose test strip", "Test supply", "strip"),
+    ("Cholesterol test cassette", "Test supply", "cassette"),
+    ("Disposable gloves", "Consumable", "box"),
+]
+# service name -> item name (one unit used per appointment)
+SERVICE_ITEMS = {
+    "Adult vaccination": "Adult vaccine dose",
+    "Flu vaccination": "Flu vaccine dose",
+    "Baby immunisation": "Infant vaccine dose",
+    "Blood glucose screening": "Glucose test strip",
+    "Cholesterol screening": "Cholesterol test cassette",
+}
 
 # Monday to Friday 08:00-17:00, Saturday 08:00-13:00 (0 = Monday)
 HOURS = [(d, time(8, 0), time(17, 0)) for d in range(5)] + [(5, time(8, 0), time(13, 0))]
@@ -77,6 +96,27 @@ def main() -> None:
                     db.add(BranchService(branch_id=b.branch_id, service_id=s.service_id))
 
         db.flush()
+
+        # inventory: items, a stock record per branch (50 on hand, minimum 10), and the service links
+        admin_for_stock = db.scalar(select(Staff).where(Staff.email == ADMIN_EMAIL))
+        items = {}
+        for name, category, unit in ITEMS:
+            it = db.scalar(select(InventoryItem).where(InventoryItem.item_name == name))
+            if not it:
+                it = InventoryItem(item_name=name, item_category=category, unit=unit)
+                db.add(it)
+                db.flush()
+            items[name] = it
+        for b in branches:
+            for it in items.values():
+                if not db.scalar(select(BranchStock.branch_stock_id).where(BranchStock.branch_id == b.branch_id, BranchStock.item_id == it.item_id)):
+                    db.add(BranchStock(branch_id=b.branch_id, item_id=it.item_id, quantity=50, minimum_quantity=10))
+        for svc_name, item_name in SERVICE_ITEMS.items():
+            svc_row = next(x for x in services if x.service_name == svc_name)
+            if not db.scalar(select(ServiceItem.service_item_id).where(ServiceItem.service_id == svc_row.service_id, ServiceItem.item_id == items[item_name].item_id)):
+                db.add(ServiceItem(service_id=svc_row.service_id, item_id=items[item_name].item_id, quantity_per_service=1))
+        db.flush()
+
         # 14 days of bookable slots (2 places each) for every offered service; safe to re-run
         today = now_local().date()
         for bs in db.scalars(select(BranchService)).all():

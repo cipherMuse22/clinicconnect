@@ -12,6 +12,7 @@ from app.core.config import get_settings
 from app.modules.accounts.models import Membership
 from app.modules.appointments.models import Appointment, AppointmentSlot
 from app.modules.appointments.service import now_local, slot_start
+from app.modules.notifications.service import notify
 from app.modules.queue.models import QueueCounter, QueueEntry, VisitRecord
 from app.modules.services.models import BranchService, Service
 
@@ -162,6 +163,10 @@ def check_in(
         db.rollback()
         raise _conflict("This appointment is already checked in")
     appt.status = "checked_in"
+    notify(
+        db, appt.patient_id, "checked_in",
+        f"You are checked in at {bs.branch.branch_name}. Your queue number is {entry.queue_number}.", appt.appointment_id,
+    )
     db.commit()
     return entry
 
@@ -195,6 +200,16 @@ def queue_position(db: Session, entry: QueueEntry) -> tuple[int, int]:
 # ------------------------------------------------------------------ staff actions
 
 
+def _notify_called(db: Session, entry: QueueEntry) -> None:
+    """FR-044: tell the patient it is their turn."""
+    appt = entry.appointment
+    notify(
+        db, appt.patient_id, "queue_called",
+        f"It's your turn. Queue number {entry.queue_number} at {appt.slot.branch_service.branch.branch_name}.",
+        appt.appointment_id,
+    )
+
+
 def call_next(db: Session, branch_id: int, staff_id: int) -> QueueEntry:
     """Call the lowest-numbered waiting patient. The claim is a guarded UPDATE, so two nurses
     pressing the button at once can never call the same person."""
@@ -215,8 +230,10 @@ def call_next(db: Session, branch_id: int, staff_id: int) -> QueueEntry:
             .execution_options(synchronize_session=False)
         )
         if res.rowcount == 1:
+            entry = db.get(QueueEntry, candidate, populate_existing=True)
+            _notify_called(db, entry)
             db.commit()
-            return db.get(QueueEntry, candidate, populate_existing=True)
+            return entry
         db.rollback()  # someone else took them first: try the next person
     raise _conflict("Could not call the next patient. Please try again.")
 
@@ -236,6 +253,7 @@ def change_status(db: Session, entry: QueueEntry, new_status: str, staff_id: int
     entry.queue_status = new_status
     if new_status == "called":
         entry.called_at, entry.called_by_staff_id = now, staff_id
+        _notify_called(db, entry)
     elif new_status == "in_service":
         entry.started_at = now
         entry.appointment.status = "in_progress"

@@ -11,6 +11,8 @@ from sqlalchemy.orm import Session
 from app.core.config import get_settings
 from app.modules.appointments.models import ACTIVE_STATUSES, Appointment, AppointmentSlot
 from app.modules.branches.models import BranchHours
+from app.modules.inventory.service import service_in_stock
+from app.modules.notifications.service import notify
 from app.modules.services.models import BranchService, Service
 
 # no 0/O/1/I so references are easy to read out over the phone (FR-027)
@@ -28,6 +30,16 @@ def new_reference() -> str:
 
 def slot_start(slot: AppointmentSlot) -> datetime:
     return datetime.combine(slot.slot_date, slot.start_time)
+
+
+def describe(appt: Appointment, slot: AppointmentSlot | None = None) -> str:
+    """One-line summary used in notifications. Contains no clinical information."""
+    slot = slot or appt.slot
+    bs = slot.branch_service
+    return (
+        f"{bs.service.service_name} at {bs.branch.branch_name} on {slot.slot_date:%a %d %b %Y} "
+        f"at {slot.start_time:%H:%M} (ref {appt.appointment_reference})"
+    )
 
 
 def _conflict(msg: str) -> HTTPException:
@@ -116,6 +128,8 @@ def load_bookable_slot(db: Session, slot_id: int) -> AppointmentSlot:
     bs = slot.branch_service
     if bs.branch.status != "active" or bs.service.status != "active" or bs.availability_status != "available":
         raise _conflict("This service is not available at this branch right now")
+    if not service_in_stock(db, bs.branch_id, bs.service_id):  # FR-051
+        raise _conflict("This service is temporarily unavailable at this branch")
     if slot_start(slot) <= now_local():
         raise _conflict("This time slot has already started")
     return slot
@@ -156,7 +170,9 @@ def book_slot(db: Session, patient_id: int, slot_id: int, booked_by_staff_id: in
     )
     db.add(appt)
     try:
-        db.commit()  # place taken and appointment saved together, or neither
+        db.flush()
+        notify(db, patient_id, "appointment_booked", f"Booked: {describe(appt)}.", appt.appointment_id)
+        db.commit()  # place taken, appointment and notification saved together, or none of them
     except IntegrityError:
         db.rollback()
         raise _conflict("Could not complete the booking. Please try again.")
@@ -182,6 +198,7 @@ def cancel_appointment(db: Session, appt: Appointment, reason: str | None, by_st
     appt.status = "cancelled"
     appt.cancelled_at = datetime.now().astimezone()
     appt.cancellation_reason = reason
+    notify(db, appt.patient_id, "appointment_cancelled", f"Cancelled: {describe(appt)}.", appt.appointment_id)
     db.commit()
     return appt
 
@@ -216,6 +233,7 @@ def reschedule_appointment(db: Session, appt: Appointment, new_slot_id: int, by_
             _release_place(db, slot_id)
     appt.slot_id = new_slot_id
     try:
+        notify(db, appt.patient_id, "appointment_rescheduled", f"Rescheduled to {describe(appt, new_slot)}.", appt.appointment_id)
         db.commit()
     except IntegrityError:
         db.rollback()

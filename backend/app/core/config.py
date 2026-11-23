@@ -13,6 +13,10 @@ class Settings(BaseSettings):
     cors_origins: list[str] = ["http://localhost:5173"]
     clinic_timezone: str = "Africa/Johannesburg"
     cancellation_cutoff_hours: int = 2  # patients cannot cancel or reschedule closer than this
+    notification_channels: list[str] = ["in_app"]  # add "sms" and/or "email" once real providers exist
+    reminder_hours_before: int = 24
+    scheduler_enabled: bool = True
+    scheduler_interval_minutes: int = 15
     checkin_window_minutes: int = 60  # patients may check in this long before the slot starts
     checkin_grace_minutes: int = 30  # ...and up to this long after it ends
 

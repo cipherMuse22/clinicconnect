@@ -12,6 +12,7 @@ from app.modules.accounts.models import Patient, Staff
 from app.modules.appointments import service as svc
 from app.modules.appointments.models import ACTIVE_STATUSES, Appointment, AppointmentSlot
 from app.modules.branches.models import Branch
+from app.modules.inventory.service import service_in_stock
 from app.modules.services.models import BranchService, Service
 
 router = APIRouter(tags=["appointments"])
@@ -137,7 +138,7 @@ def list_slots(branch_id: int, service_id: int, day: date = Query(alias="date"),
     )
     if bs is None or bs.branch.status != "active" or bs.service.status != "active":
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Branch or service not found")
-    if bs.availability_status != "available":
+    if bs.availability_status != "available" or not service_in_stock(db, branch_id, service_id):
         return []
     now = svc.now_local()
     slots = db.scalars(

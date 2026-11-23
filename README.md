@@ -3,7 +3,7 @@
 Full-stack healthcare management portfolio project (fictional provider). See `docs/` for the SRS and diagrams.
 
 ```
-backend/   FastAPI + PostgreSQL API        (Phases 1-4: accounts, membership, RBAC, audit, branches, services, booking, check-in and queue)
+backend/   FastAPI + PostgreSQL API        (Phases 1-7, complete: accounts, RBAC, audit, branches, services, booking, queue, notifications, inventory, reports)
 web/       React staff dashboard           (next)
 mobile/    Flutter patient app             (next)
 docs/      SRS, ERD, use cases, architecture
@@ -110,11 +110,63 @@ patient. "People ahead" counts only patients still waiting.
 After pulling Phase 4: `alembic upgrade head`. No new packages. The optional concurrency tests are
 `tests/test_booking_concurrency.py` and `tests/test_queue_concurrency.py` (see the instructions above).
 
+## What exists in Phase 5 (notifications)
+
+Notifications are written in the same transaction as the event that caused them (booking, cancellation, reschedule,
+check-in, "you are being called"). In-app is real; SMS and email are simulated providers behind `register_provider`,
+so a real gateway can be added without touching the booking code. A failing provider is recorded as `failed` and never
+breaks the booking. A background job (APScheduler, every 15 minutes) sends one reminder per booking, 24 hours before;
+a rescheduled booking gets a fresh reminder.
+
+| Method | Path | Who |
+|---|---|---|
+| GET | `/me/notifications` (`unread_only`, `limit`, `offset`) | patient |
+| GET | `/me/notifications/unread-count` | patient |
+| POST | `/me/notifications/read-all` | patient |
+| POST | `/me/notifications/{id}/read` | patient |
+| POST | `/admin/jobs/send-reminders` | system_admin |
+
+Settings: `NOTIFICATION_CHANNELS`, `REMINDER_HOURS_BEFORE`, `SCHEDULER_ENABLED`, `SCHEDULER_INTERVAL_MINUTES`.
+
+## What exists in Phase 6 (inventory and stock)
+
+Items, per-branch stock with a minimum level, an append-only movement log, and links saying which items a service
+uses. Stock changes use a guarded update, so stock can never go below zero even with simultaneous requests (409 if
+not enough). A service whose linked item is out of stock at a branch shows `in_stock: false` and offers no slots.
+Services with no linked items are unaffected. Editors: inventory_manager and system_admin. Viewers also include
+clinic_manager and nurse.
+
+| Method | Path |
+|---|---|
+| GET, POST | `/inventory/items` |
+| GET, POST | `/branches/{b}/stock` |
+| GET | `/branches/{b}/stock/low` |
+| PATCH | `/branches/{b}/stock/{item_id}` |
+| GET, POST | `/branches/{b}/stock/{item_id}/movements` |
+| GET | `/services/{id}/items` |
+| PUT, DELETE | `/services/{id}/items/{item_id}` |
+
+## What exists in Phase 7 (reports and audit viewer)
+
+Counts and averages only, no patient details. Defaults to the last 30 days, maximum 366. Managers see only their
+own branches.
+
+| Method | Path | Who |
+|---|---|---|
+| GET | `/reports/appointments` | clinic_manager, system_admin |
+| GET | `/reports/queue` | clinic_manager, system_admin |
+| GET | `/reports/branch-performance` | clinic_manager, system_admin |
+| GET | `/reports/system-summary` | system_admin |
+| GET | `/admin/audit-logs` (`action`, `entity_type`, `actor_staff_id`, `from`, `to`, `limit`, `offset`) | system_admin |
+
+After pulling Phases 5-7: `pip install -r requirements.txt` (adds apscheduler), `alembic upgrade head`,
+`python -m scripts.seed` (adds demo stock; safe to re-run), then `pytest`. The optional stock concurrency test
+is `tests/test_stock_concurrency.py` (set `TEST_DATABASE_URL`).
+
 ## Next steps
 
-1. Phase 5: notifications (booking, reminders, cancellation, queue updates).
-2. Phase 6: inventory and stock. Phase 7: reports and audit viewer.
-3. Scaffold `web/` (Vite React TS) and `mobile/` (`flutter create`).
+The backend is complete. Next: scaffold `web/` (Vite React TS staff dashboard) and `mobile/` (`flutter create`
+patient app).
 
 ## Known gaps (on purpose, for later)
 

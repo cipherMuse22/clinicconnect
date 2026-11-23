@@ -5,3 +5,5 @@ from app.modules.audit.models import AuditLog  # noqa: F401
 from app.modules.branches.models import Branch, BranchHours  # noqa: F401
 from app.modules.services.models import BranchService, Service  # noqa: F401
 from app.modules.queue.models import QueueCounter, QueueEntry, VisitRecord  # noqa: F401,E402
+from app.modules.notifications.models import Notification  # noqa: F401,E402
+from app.modules.inventory.models import BranchStock, InventoryItem, ServiceItem, StockMovement  # noqa: F401,E402

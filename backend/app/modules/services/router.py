@@ -10,6 +10,7 @@ from app.core.deps import ensure_branch_access, require_roles
 from app.db.session import get_db
 from app.modules.accounts.models import Staff
 from app.modules.branches.models import Branch
+from app.modules.inventory.service import service_in_stock
 from app.modules.services.models import BranchService, Service
 
 router = APIRouter(tags=["services"])
@@ -45,6 +46,7 @@ class BranchServiceOut(BaseModel):
     estimated_duration_min: int
     availability_status: str
     available: bool  # FR-021: true only if the service is active and available at this branch
+    in_stock: bool = True  # FR-051: false when the stock the service needs is missing or too low
 
 
 class BranchServiceIn(BaseModel):
@@ -82,6 +84,7 @@ def list_branch_services(branch_id: int, db: Session = Depends(get_db)):
             estimated_duration_min=s.estimated_duration_min,
             availability_status=bs.availability_status,
             available=bs.availability_status == "available",
+            in_stock=service_in_stock(db, branch_id, s.service_id),
         )
         for bs, s in rows
     ]
