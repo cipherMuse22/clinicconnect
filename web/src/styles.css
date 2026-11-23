@@ -84,3 +84,7 @@ pre { margin: 0; font-size: 12px; white-space: pre-wrap; }
   .who { margin-top: 0; }
   main { padding: 1rem; }
 }
+
+fieldset { border: 1px solid var(--line); border-radius: 8px; padding: .5rem .8rem; display: flex; flex-direction: column; gap: .3rem; }
+legend { font-size: 13px; color: var(--muted); padding: 0 .3rem; }
+.section { margin: 1.5rem 0 .25rem; }

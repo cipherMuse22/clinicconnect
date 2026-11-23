@@ -11,7 +11,7 @@ class Settings(BaseSettings):
     access_token_minutes: int = 30
     privacy_notice_version: str = "2026-11-v1"
     cors_origins: list[str] = ["http://localhost:5173"]
-        # Development convenience: allow any localhost port (Flutter web picks a random one). Set to "" in production.
+    # Development convenience: allow any localhost port (Flutter web picks a random one). Set to "" in production.
     cors_origin_regex: str = r"https?://(localhost|127\.0\.0\.1)(:\d+)?"
     clinic_timezone: str = "Africa/Johannesburg"
     cancellation_cutoff_hours: int = 2  # patients cannot cancel or reschedule closer than this

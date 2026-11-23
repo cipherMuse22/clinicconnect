@@ -59,6 +59,7 @@ export const api = {
   post: <T>(path: string, body?: unknown) => request<T>("POST", path, body ?? {}),
   patch: <T>(path: string, body: unknown) => request<T>("PATCH", path, body),
   put: <T>(path: string, body: unknown) => request<T>("PUT", path, body),
+  del: <T>(path: string) => request<T>("DELETE", path),
   /** For images such as the clinic check-in QR code (they need the login header, so <img src> will not do). */
   async blobUrl(path: string): Promise<string> {
     const token = tokenStore.get();
@@ -79,12 +80,50 @@ export interface Me {
   role_names: Role[];
   branch_ids: number[];
 }
+export interface Hours {
+  day_of_week: number; // 0 = Monday ... 6 = Sunday
+  open_time: string;
+  close_time: string;
+}
 export interface Branch {
   branch_id: number;
   branch_name: string;
   address: string | null;
+  phone: string | null;
+  status: string;
+  hours: Hours[];
+}
+export interface StaffRow {
+  staff_id: number;
+  first_name: string;
+  last_name: string;
+  email: string;
+  account_status: string;
+  role_names: Role[];
+  branch_ids: number[];
+}
+export interface ServiceFull {
+  service_id: number;
+  service_name: string;
+  description: string | null;
+  estimated_duration_min: number;
   status: string;
 }
+export interface BranchServiceRow {
+  service_id: number;
+  service_name: string;
+  estimated_duration_min: number;
+  availability_status: string;
+  available: boolean;
+}
+export const ALL_ROLES: { value: Role; label: string }[] = [
+  { value: "receptionist", label: "Receptionist" },
+  { value: "nurse", label: "Nurse" },
+  { value: "clinic_manager", label: "Clinic manager" },
+  { value: "inventory_manager", label: "Inventory manager" },
+  { value: "system_admin", label: "System admin" },
+];
+export const DAY_NAMES = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 export interface BranchService {
   service_id: number;
   service_name: string;

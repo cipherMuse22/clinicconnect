@@ -11,6 +11,7 @@ interface AuthValue {
   has: (...roles: Role[]) => boolean;
   login: (email: string, password: string) => Promise<void>;
   logout: () => void;
+  refresh: () => Promise<void>; // reload my branches after creating or changing one
   notice: string | null;
 }
 
@@ -73,6 +74,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setNotice(null);
         await loadProfile();
       },
+      refresh: loadProfile,
       logout,
     }),
     [me, loading, branches, branchId, notice, loadProfile, logout],

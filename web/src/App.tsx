@@ -4,11 +4,14 @@ import { Role } from "./api";
 import { useAuth } from "./auth";
 import Layout from "./Layout";
 import AuditPage from "./pages/AuditPage";
+import BranchesPage from "./pages/BranchesPage";
 import InventoryPage from "./pages/InventoryPage";
 import LoginPage from "./pages/LoginPage";
 import QueuePage from "./pages/QueuePage";
 import ReportsPage from "./pages/ReportsPage";
 import SchedulePage from "./pages/SchedulePage";
+import ServicesPage from "./pages/ServicesPage";
+import StaffPage from "./pages/StaffPage";
 
 export interface NavItem {
   path: string;
@@ -22,6 +25,9 @@ export const NAV: NavItem[] = [
   { path: "schedule", label: "Schedule", roles: ["receptionist", "nurse", "clinic_manager", "system_admin"], element: <SchedulePage /> },
   { path: "inventory", label: "Inventory", roles: ["inventory_manager", "clinic_manager", "nurse", "system_admin"], element: <InventoryPage /> },
   { path: "reports", label: "Reports", roles: ["clinic_manager", "system_admin"], element: <ReportsPage /> },
+  { path: "branches", label: "Branches", roles: ["clinic_manager", "system_admin"], element: <BranchesPage /> },
+  { path: "services", label: "Services", roles: ["system_admin"], element: <ServicesPage /> },
+  { path: "staff", label: "Staff", roles: ["system_admin"], element: <StaffPage /> },
   { path: "audit", label: "Audit log", roles: ["system_admin"], element: <AuditPage /> },
 ];
 

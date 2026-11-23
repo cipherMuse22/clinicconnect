@@ -4,7 +4,7 @@ Full-stack healthcare management portfolio project (fictional provider). See `do
 
 ```
 backend/   FastAPI + PostgreSQL API        (Phases 1-7, complete: accounts, RBAC, audit, branches, services, booking, queue, notifications, inventory, reports)
-web/       React staff dashboard           (next)
+web/       React staff dashboard           (see web/README.md)
 mobile/    Flutter patient app             (scaffolded: see mobile/README.md)
 docs/      SRS, ERD, use cases, architecture
 ```
@@ -163,10 +163,23 @@ After pulling Phases 5-7: `pip install -r requirements.txt` (adds apscheduler), 
 `python -m scripts.seed` (adds demo stock; safe to re-run), then `pytest`. The optional stock concurrency test
 is `tests/test_stock_concurrency.py` (set `TEST_DATABASE_URL`).
 
+## Staff management (admin)
+
+| Method | Path | Who |
+|---|---|---|
+| GET | `/admin/staff` | system_admin |
+| POST | `/admin/staff` | system_admin |
+| PATCH | `/admin/staff/{id}` (names, roles, branch_ids, account_status) | system_admin |
+| POST | `/admin/staff/{id}/reset-password` | system_admin |
+| GET | `/admin/branches`, `/admin/services` (include inactive ones) | system_admin |
+
+The last active system admin cannot be demoted or deactivated. Deactivated staff cannot sign in. Password resets are
+audited without storing the password. `GET /auth/staff/me` returns the signed-in staff member's roles and branches.
+
 ## Next steps
 
-The backend is complete. Next: scaffold `web/` (Vite React TS staff dashboard) and `mobile/` (`flutter create`
-patient app).
+The backend, patient app and staff dashboard exist. Next:
+hardening (refresh tokens, self-service password reset by email, login rate limiting).
 
 ## Known gaps (on purpose, for later)
 
