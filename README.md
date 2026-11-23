@@ -3,7 +3,7 @@
 Full-stack healthcare management portfolio project (fictional provider). See `docs/` for the SRS and diagrams.
 
 ```
-backend/   FastAPI + PostgreSQL API        (Phase 1: accounts, membership, RBAC, audit)
+backend/   FastAPI + PostgreSQL API        (Phases 1-2: accounts, membership, RBAC, audit, branches, services)
 web/       React staff dashboard           (next)
 mobile/    Flutter patient app             (next)
 docs/      SRS, ERD, use cases, architecture
@@ -44,11 +44,24 @@ Run tests (no database needed, they use in-memory SQLite): `pytest`
 | `GET /api/v1/me`, `/me/membership`, `/me/membership/qr.png` | patient | |
 | `POST /api/v1/admin/staff` | `system_admin` | creates staff with roles and branches, writes an audit row |
 
+## What exists in Phase 2
+
+| Endpoint | Who | Notes |
+|---|---|---|
+| `GET /api/v1/branches`, `/branches/{id}` | public | active branches with weekly hours |
+| `GET /api/v1/services` | public | active service catalogue |
+| `GET /api/v1/branches/{id}/services` | public | services at a branch with an `available` flag |
+| `POST/PATCH /api/v1/branches` | `system_admin` | create or edit a branch |
+| `PUT /api/v1/branches/{id}/hours` | admin, or manager of that branch | replaces weekly hours |
+| `POST/PATCH /api/v1/services` | `system_admin` | manage the service catalogue |
+| `PUT/DELETE /api/v1/branches/{id}/services/{service_id}` | admin, or manager of that branch | offer a service at a branch, mark it unavailable |
+
+After pulling Phase 2: `alembic upgrade head`, then `python -m scripts.seed` (adds 2 branches, 8 services, opening hours).
+
 ## Next steps
 
-1. Phase 2: branches, services, `branch_service`, `branch_hours` (see the ERD).
-2. Phase 3: `appointment_slot` + booking with a row lock.
-3. Scaffold `web/` (Vite React TS) and `mobile/` (`flutter create`).
+1. Phase 3: `appointment_slot` + booking with a row lock.
+2. Scaffold `web/` (Vite React TS) and `mobile/` (`flutter create`).
 
 ## Known gaps (on purpose, for later)
 

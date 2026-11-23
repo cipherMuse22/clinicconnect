@@ -9,7 +9,7 @@ from app.core.security import hash_password
 from app.db.base import Base
 from app.db.session import get_db
 from app.main import app
-from app.modules.accounts.models import Role, Staff, StaffRole
+from app.modules.accounts.models import Role, Staff, StaffBranch, StaffRole
 from app.modules.admin.router import ROLE_NAMES
 from app.modules.branches.models import Branch
 
@@ -38,12 +38,15 @@ def seeded(db_session):
     for name in ROLE_NAMES:
         db_session.add(Role(role_name=name))
     db_session.add(Branch(branch_name="Test Branch"))
+    db_session.add(Branch(branch_name="Other Branch"))
     db_session.commit()
 
 
-def make_staff(db, email: str, role: str, password: str = "StaffPass123!") -> Staff:
+def make_staff(db, email: str, role: str, password: str = "StaffPass123!", branch_ids=()) -> Staff:
     s = Staff(first_name="T", last_name="User", email=email, password_hash=hash_password(password))
     s.roles.append(StaffRole(role=db.scalar(select(Role).where(Role.role_name == role))))
+    for bid in branch_ids:
+        s.branches.append(StaffBranch(branch_id=bid))
     db.add(s)
     db.commit()
     return s

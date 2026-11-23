@@ -53,3 +53,11 @@ def require_roles(*allowed: str):
         return staff
 
     return checker
+
+
+def ensure_branch_access(staff: Staff, branch_id: int) -> None:
+    """FR-017: staff only manage branches assigned to them, unless they are a system administrator."""
+    if "system_admin" in staff.role_names:
+        return
+    if branch_id not in staff.branch_ids:
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "You are not assigned to this branch")
