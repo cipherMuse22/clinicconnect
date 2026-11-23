@@ -8,6 +8,7 @@ from app.modules.auth.router import router as auth_router
 from app.modules.branches.router import router as branches_router
 from app.modules.memberships.router import router as memberships_router
 from app.modules.patients.router import router as patients_router
+from app.modules.queue.router import router as queue_router
 from app.modules.services.router import router as services_router
 
 app = FastAPI(title="ClinicConnect API", version="0.1.0")
@@ -28,6 +29,7 @@ app.include_router(branches_router, prefix=PREFIX)
 app.include_router(services_router, prefix=PREFIX)
 app.include_router(appointments_router, prefix=PREFIX)
 app.include_router(patients_router, prefix=PREFIX)
+app.include_router(queue_router, prefix=PREFIX)
 
 
 @app.get("/health", tags=["system"])

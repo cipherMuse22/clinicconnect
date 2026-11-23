@@ -13,6 +13,8 @@ class Settings(BaseSettings):
     cors_origins: list[str] = ["http://localhost:5173"]
     clinic_timezone: str = "Africa/Johannesburg"
     cancellation_cutoff_hours: int = 2  # patients cannot cancel or reschedule closer than this
+    checkin_window_minutes: int = 60  # patients may check in this long before the slot starts
+    checkin_grace_minutes: int = 30  # ...and up to this long after it ends
 
 
 @lru_cache

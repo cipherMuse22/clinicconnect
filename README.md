@@ -3,7 +3,7 @@
 Full-stack healthcare management portfolio project (fictional provider). See `docs/` for the SRS and diagrams.
 
 ```
-backend/   FastAPI + PostgreSQL API        (Phases 1-3: accounts, membership, RBAC, audit, branches, services, booking)
+backend/   FastAPI + PostgreSQL API        (Phases 1-4: accounts, membership, RBAC, audit, branches, services, booking, check-in and queue)
 web/       React staff dashboard           (next)
 mobile/    Flutter patient app             (next)
 docs/      SRS, ERD, use cases, architecture
@@ -88,10 +88,33 @@ pytest tests/test_booking_concurrency.py
 ```
 It fires 20 simultaneous bookings at a 3-place slot and checks that exactly 3 succeed. It wipes only the `_test` database.
 
+## What exists in Phase 4 (check-in and queue)
+
+| Endpoint | Who | Notes |
+|---|---|---|
+| `POST /api/v1/me/check-in` | patient | `{"branch_token": "...", "appointment_reference": optional}`; the token comes from the QR shown at the branch |
+| `GET /api/v1/me/queue` | patient | queue number, status, `people_ahead`, estimated wait (labelled as an estimate) |
+| `POST /api/v1/branches/{b}/check-in` | receptionist, manager, admin | by `appointment_reference` or the membership `qr_token` |
+| `GET /api/v1/branches/{b}/check-in-qr.png` | receptionist, manager, admin | the QR to display at the branch; changes daily |
+| `GET /api/v1/branches/{b}/queue?date=` | reception, nurse, manager, admin | the day's queue |
+| `POST /api/v1/branches/{b}/queue/call-next` | nurse | calls the lowest waiting number |
+| `PATCH /api/v1/queue/{id}/status` | reception, nurse, manager, admin | `called`, `in_service` (nurse only), `skipped`, `cancelled`, `waiting` |
+| `POST /api/v1/queue/{id}/complete` | nurse | finishes the visit, writes a `visit_record`, marks the appointment completed |
+
+Rules: check-in must be at the appointment's own branch, on the day, and (for patients) from 60 minutes before the
+slot until 30 minutes after it ends. Reception can check in outside that window. Cancelled, completed and
+already checked-in appointments are refused. Queue numbers restart each day at each branch and are issued by an
+atomic counter, so simultaneous check-ins never clash. Two nurses pressing "call next" together never call the same
+patient. "People ahead" counts only patients still waiting.
+
+After pulling Phase 4: `alembic upgrade head`. No new packages. The optional concurrency tests are
+`tests/test_booking_concurrency.py` and `tests/test_queue_concurrency.py` (see the instructions above).
+
 ## Next steps
 
-1. Phase 4: check-in (QR or reference) and the queue.
-2. Scaffold `web/` (Vite React TS) and `mobile/` (`flutter create`).
+1. Phase 5: notifications (booking, reminders, cancellation, queue updates).
+2. Phase 6: inventory and stock. Phase 7: reports and audit viewer.
+3. Scaffold `web/` (Vite React TS) and `mobile/` (`flutter create`).
 
 ## Known gaps (on purpose, for later)
 
