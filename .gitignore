@@ -1,0 +1,19 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+.ruff_cache/
+# Env
+.env
+# Node / Flutter
+node_modules/
+dist/
+.dart_tool/
+build/
+# IDE / OS
+.idea/
+.vscode/*
+!.vscode/settings.json
+!.vscode/launch.json
+.DS_Store
